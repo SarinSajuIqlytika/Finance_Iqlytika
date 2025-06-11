@@ -83,11 +83,11 @@ async function scrapeLivePrice(ticker = "INFY", exchange = "NSE", intervalSec = 
   const url = `https://www.google.com/finance/quote/${ticker}:${exchange}`;
 
   // Create a unique temporary user data directory
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "chrome-profile-"));
+  // const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "chrome-profile-"));
 
   let options = new chrome.Options();
   options.addArguments("--headless=new");
-  options.addArguments(`--user-data-dir=${userDataDir}`);
+  // options.addArguments(`--user-data-dir=${userDataDir}`);
   options.addArguments("--no-sandbox"); // Required for EC2/Linux environments
   options.addArguments("--disable-dev-shm-usage"); // Avoids issues in low-memory environments
 
@@ -141,7 +141,7 @@ async function scrapeLivePrice(ticker = "INFY", exchange = "NSE", intervalSec = 
     }
     // Clean up the temporary user data directory
     try {
-      fs.rmSync(userDataDir, { recursive: true, force: true });
+      // fs.rmSync(userDataDir, { recursive: true, force: true });
     } catch (err) {
       console.warn(`Failed to delete temp directory ${userDataDir}: ${err.message}`);
     }
