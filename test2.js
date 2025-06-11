@@ -76,13 +76,12 @@ const path = require("path");
 async function scrapeLivePrice(ticker = "INFY", exchange = "NSE", intervalSec = 10) {
   const url = `https://www.google.com/finance/quote/${ticker}:${exchange}`;
 
-  // Create a temp profile directory
+  // Create a unique temp profile directory
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "chrome-profile-"));
 
-  // Path to your custom ChromeDriver if you've downloaded it manually
+  // Use custom ChromeDriver binary
   const chromeDriverPath = "/home/ubuntu/chromedriver-linux64/chromedriver";
-
-  const service = new chrome.ServiceBuilder(chromeDriverPath).build();
+  const service = new chrome.ServiceBuilder(chromeDriverPath); // ✅ Corrected line
 
   const options = new chrome.Options()
     .addArguments("--headless=new")
