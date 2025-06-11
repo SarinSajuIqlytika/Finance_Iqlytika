@@ -80,7 +80,7 @@ async function scrapeLivePrice(ticker = "INFY", exchange = "NSE", intervalSec = 
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "chrome-profile-"));
 
   // Use custom ChromeDriver binary
-  const chromeDriverPath = "/home/ubuntu/chromedriver-linux64/chromedriver";
+  const chromeDriverPath = "/usr/local/bin/chromedriver";
   const service = new chrome.ServiceBuilder(chromeDriverPath); // ✅ Corrected line
 
   const options = new chrome.Options()
