@@ -26,8 +26,8 @@ function getRandomUserAgent() {
 }
 
 async function scrapeStockTable(status, exchange) {
-  //status as in losers or gainers ....amigos
   try {
+    console.log("FUNCTION CALLED")
     const URL = `https://money.rediff.com/${status}/${exchange}/daily/groupall`;
     const userAgent = getRandomUserAgent();
     const { data: html } = await axios.get(URL, {
@@ -57,7 +57,7 @@ async function scrapeStockTable(status, exchange) {
         // changeDirection: percentChange > 0 ? "positive" : percentChange < 0 ? "negative" : "neutral"
       });
     });
-    console.log(results);
+    // console.log(results);
     return results;
   } catch (error) {
     console.error("Scraping failed:", error.message);
@@ -83,12 +83,10 @@ app.get("/api/stock/top", async (req, res) => {
 
   let key = `${exchange}_${status}`
   
-  if (result[key]) {
-    data = result[key];
-  } else {
+  if (!result[key]) {
     result[key] = await scrapeStockTable(status, exchange);
-  }
-  res.json({ status: "success", count: data.length, data:result[key]});
+  } 
+  res.json({ status: "success", count: result[key].length, data:result[key]});
 });
 
 // Run once daily at 4:10 PM IST
