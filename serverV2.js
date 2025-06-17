@@ -58,15 +58,16 @@ async function scrapeStockTable(status, exchange) {
 
     const $ = cheerio.load(html);
     const results = [];
-
+   
+   
     $("tbody tr").each((i, row) => {
       const tds = $(row).find("td");
       if (tds.length < 4) return;
 
       const companyName = $(tds[0]).text().trim();
-      const prevClose = $(tds[1]).text().trim();
-      const currentPrice = $(tds[2]).text().trim();
-      const percentChangeRaw = $(tds[3]).text().trim();
+      const prevClose = exchange=="nse"?$(tds[1]).text().trim():$(tds[2]).text().trim();
+      const currentPrice =exchange=="nse"? $(tds[2]).text().trim():$(tds[3]).text().trim();
+      const percentChangeRaw = exchange=="nse"?$(tds[3]).text().trim():$(tds[4]).text().trim();
       const percentChange = parseFloat(percentChangeRaw);
 
       results.push({
