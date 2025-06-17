@@ -158,15 +158,35 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 
+const userAgents = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:113.0) Gecko/20100101 Firefox/113.0",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1",
+];
+
+function getRandomUserAgent() {
+  return userAgents[Math.floor(Math.random() * userAgents.length)];
+}
+
+function randomDelay(baseSec = 10) {
+  const jitter = Math.floor(Math.random() * 4); // up to +3 sec
+  return (baseSec + jitter) * 1000;
+}
+
 async function scrapeWithCheerio(ticker = "INFY", exchange = "NSE", intervalSec = 10) {
   const url = `https://www.google.com/finance/quote/${ticker}:${exchange}`;
 
   while (true) {
+    const userAgent = getRandomUserAgent();
+
     try {
       const { data } = await axios.get(url, {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
+          "User-Agent": userAgent,
+          // Optionally rotate proxies here if needed
+          // "X-Forwarded-For": randomIP()  <-- if using a proxy
         },
       });
 
@@ -190,11 +210,14 @@ async function scrapeWithCheerio(ticker = "INFY", exchange = "NSE", intervalSec 
       console.warn(`[${new Date().toLocaleTimeString()}] ⚠️ Error: ${err.message}`);
     }
 
-    // Wait before repeating
-    await new Promise((res) => setTimeout(res, intervalSec * 1000));
+    // Wait with random jitter before next request
+    const delay = randomDelay(intervalSec);
+    console.log(`🕒 Waiting ${delay / 1000}s...\n`);
+    await new Promise((res) => setTimeout(res, delay));
   }
 }
 
-// Run
+// Start scraping
 scrapeWithCheerio("INFY", "NSE", 10);
+
 
