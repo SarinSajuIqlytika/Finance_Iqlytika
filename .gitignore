@@ -49,3 +49,4 @@ nohup.out
 screenshots/
 scraped_data/
 output/
+stock_cache.json
