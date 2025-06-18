@@ -77,7 +77,7 @@ async function scrapeStockTable(status, exchange) {
         percentChange,
       });
     });
-
+    // console.log(results);
     return results;
   } catch (error) {
     console.error("❌ Scraping failed:", error.message);
@@ -99,8 +99,8 @@ app.get("/api/stock/top", async (req, res) => {
   }
 
   const key = `${exchange}_${status}`;
-
-  if (!result[key]) {
+// console.log(key,result[key].length)
+  if (!result[key] || result[key].length==0) {
     result[key] = await scrapeStockTable(status, exchange);
     saveCacheToFile();
   }
