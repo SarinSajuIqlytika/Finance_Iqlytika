@@ -47,9 +47,9 @@ function getRandomUserAgent() {
 // Main scraping function
 async function scrapeStockTable(status, exchange) {
   try {
-    console.log(`📡 Scraping ${status.toUpperCase()} from ${exchange.toUpperCase()}`);
     const URL = `https://money.rediff.com/${status}/${exchange}/daily/groupall`;
     const userAgent = getRandomUserAgent();
+    console.log(`📡 Scraping ${status.toUpperCase()} from ${exchange.toUpperCase()} - ${userAgent}`);
     const { data: html } = await axios.get(URL, {
       headers: {
         "User-Agent": userAgent,
@@ -68,7 +68,7 @@ async function scrapeStockTable(status, exchange) {
       const prevClose = exchange=="nse"?$(tds[1]).text().trim():$(tds[2]).text().trim();
       const currentPrice =exchange=="nse"? $(tds[2]).text().trim():$(tds[3]).text().trim();
       const percentChangeRaw = exchange=="nse"?$(tds[3]).text().trim():$(tds[4]).text().trim();
-      const percentChange = parseFloat(percentChangeRaw);
+      const percentChange = percentChangeRaw;
 
       results.push({
         companyName,
@@ -77,6 +77,7 @@ async function scrapeStockTable(status, exchange) {
         percentChange,
       });
     });
+    console.log(results.slice(0,1))
     // console.log(results);
     return results;
   } catch (error) {
@@ -110,23 +111,23 @@ app.get("/api/stock/top", async (req, res) => {
 
 // Cron Job – 4:10 PM IST daily
 cron.schedule(
-  "10 16 * * *",
+  "59 11 * * *",
   async () => {
     console.log("⏰ Cron triggered at 4:10 PM IST...");
-
     const tasks = [
       { key: "nse_gainers", args: ["gainers", "nse"] },
       { key: "bse_gainers", args: ["gainers", "bse"] },
       { key: "nse_losers", args: ["losers", "nse"] },
       { key: "bse_losers", args: ["losers", "bse"] },
     ];
-
+    result = {};
     tasks.forEach(({ key, args }) => {
-      const randomDelay = Math.floor(Math.random() * 10000); // 0–9999 ms
+      const randomDelay = Math.floor(Math.random() * 10000); 
       setTimeout(async () => {
         console.log(`⚙️ Starting ${key} scrape after ${randomDelay} ms`);
         try {
           result[key] = await scrapeStockTable(...args);
+          console.log("🤡",result[key].length)
           saveCacheToFile();
           console.log(`✅ Finished ${key} | Count: ${result[key].length}`);
         } catch (err) {
