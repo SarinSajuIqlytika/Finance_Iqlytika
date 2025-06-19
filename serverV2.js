@@ -162,13 +162,20 @@ async function start() {
   });
 }
 
-// Cron Job – 5:00 PM IST daily
-cron.schedule("09 13 * * *", start, {
+
+cron.schedule("30 9 * * *", start, {
   timezone: "Asia/Kolkata",
 });
 
-// Cron Job – 10:00 AM IST daily
-cron.schedule("0 10 * * *", start, {
+cron.schedule("30 11 * * *", start, {
+  timezone: "Asia/Kolkata",
+});
+
+cron.schedule("30 13 * * *", start, {
+  timezone: "Asia/Kolkata",
+});
+
+cron.schedule("00 16 * * *", start, {
   timezone: "Asia/Kolkata",
 });
 
