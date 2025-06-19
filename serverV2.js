@@ -138,67 +138,39 @@ app.get("/api/stock/top", async (req, res) => {
   res.json({ status: "success", count: result[key].length, data: result[key] });
 });
 
+async function start() {
+  console.log("⏰ Cron triggered at 10:00 AM IST...");
+  const tasks = [
+    { key: "nse_gainers", args: ["gainers", "nse"] },
+    { key: "bse_gainers", args: ["gainers", "bse"] },
+    { key: "nse_losers", args: ["losers", "nse"] },
+    { key: "bse_losers", args: ["losers", "bse"] },
+  ];
+  result = {};
+  tasks.forEach(({ key, args }) => {
+    const randomDelay = Math.floor(Math.random() * 10000);
+    setTimeout(async () => {
+      console.log(`⚙️ Starting ${key} scrape after ${randomDelay} ms`);
+      try {
+        result[key] = await scrapeStockTable(...args);
+        saveCacheToFile();
+        console.log(`✅ Finished ${key} | Count: ${result[key].length}`);
+      } catch (err) {
+        console.error(`❌ Failed ${key} scrape`, err.message);
+      }
+    }, randomDelay);
+  });
+}
+
 // Cron Job – 5:00 PM IST daily
-cron.schedule(
-  "0 17 * * *",
-  async () => {
-    console.log("⏰ Cron triggered at 5:00 PM IST...");
-    const tasks = [
-      { key: "nse_gainers", args: ["gainers", "nse"] },
-      { key: "bse_gainers", args: ["gainers", "bse"] },
-      { key: "nse_losers", args: ["losers", "nse"] },
-      { key: "bse_losers", args: ["losers", "bse"] },
-    ];
-    result = {};
-    tasks.forEach(({ key, args }) => {
-      const randomDelay = Math.floor(Math.random() * 10000);
-      setTimeout(async () => {
-        console.log(`⚙️ Starting ${key} scrape after ${randomDelay} ms`);
-        try {
-          result[key] = await scrapeStockTable(...args);
-          saveCacheToFile();
-          console.log(`✅ Finished ${key} | Count: ${result[key].length}`);
-        } catch (err) {
-          console.error(`❌ Failed ${key} scrape`, err.message);
-        }
-      }, randomDelay);
-    });
-  },
-  {
-    timezone: "Asia/Kolkata",
-  }
-);
+cron.schedule("09 13 * * *", start, {
+  timezone: "Asia/Kolkata",
+});
 
 // Cron Job – 10:00 AM IST daily
-cron.schedule(
-  "0 10 * * *",
-  async () => {
-    console.log("⏰ Cron triggered at 10:00 AM IST...");
-    const tasks = [
-      { key: "nse_gainers", args: ["gainers", "nse"] },
-      { key: "bse_gainers", args: ["gainers", "bse"] },
-      { key: "nse_losers", args: ["losers", "nse"] },
-      { key: "bse_losers", args: ["losers", "bse"] },
-    ];
-    result = {};
-    tasks.forEach(({ key, args }) => {
-      const randomDelay = Math.floor(Math.random() * 10000);
-      setTimeout(async () => {
-        console.log(`⚙️ Starting ${key} scrape after ${randomDelay} ms`);
-        try {
-          result[key] = await scrapeStockTable(...args);
-          saveCacheToFile();
-          console.log(`✅ Finished ${key} | Count: ${result[key].length}`);
-        } catch (err) {
-          console.error(`❌ Failed ${key} scrape`, err.message);
-        }
-      }, randomDelay);
-    });
-  },
-  {
-    timezone: "Asia/Kolkata",
-  }
-);
+cron.schedule("0 10 * * *", start, {
+  timezone: "Asia/Kolkata",
+});
 
 // Start server
 app.listen(PORT, () => {
