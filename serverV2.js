@@ -49,7 +49,9 @@ async function scrapeStockTable(status, exchange) {
   try {
     const URL = `https://money.rediff.com/${status}/${exchange}/daily/groupall`;
     const userAgent = getRandomUserAgent();
-    console.log(`📡 Scraping ${status.toUpperCase()} from ${exchange.toUpperCase()} - ${userAgent}`);
+    console.log(
+      `📡 Scraping ${status.toUpperCase()} from ${exchange.toUpperCase()} - ${userAgent}`
+    );
     const { data: html } = await axios.get(URL, {
       headers: {
         "User-Agent": userAgent,
@@ -58,28 +60,49 @@ async function scrapeStockTable(status, exchange) {
 
     const $ = cheerio.load(html);
     const results = [];
-   
-   
+
     $("tbody tr").each((i, row) => {
-      const tds = $(row).find("td");
-      if (tds.length < 4) return;
+      try {
+        const tds = $(row).find("td");
+        if (tds.length < 4) return;
 
-      const companyName = $(tds[0]).text().trim();
-      const prevClose = exchange=="nse"?$(tds[1]).text().trim():$(tds[2]).text().trim();
-      const currentPrice =exchange=="nse"? $(tds[2]).text().trim():$(tds[3]).text().trim();
-      const percentChangeRaw = exchange=="nse"?$(tds[3]).text().trim():$(tds[4]).text().trim();
-      const percentChange = percentChangeRaw;
+        // Safely extract values
+        const companyName = $(tds[0]).text()?.trim() || null;
+        const prevClose =
+          exchange === "nse"
+            ? $(tds[1]).text()?.trim() || null
+            : $(tds[2]).text()?.trim() || null;
+        const currentPrice =
+          exchange === "nse"
+            ? $(tds[2]).text()?.trim() || null
+            : $(tds[3]).text()?.trim() || null;
+        const percentChangeRaw =
+          exchange === "nse"
+            ? $(tds[3]).text()?.trim() || null
+            : $(tds[4]).text()?.trim() || null;
+        const percentChange = percentChangeRaw;
 
-      results.push({
-        companyName,
-        prevClose: parseFloat(prevClose),
-        currentPrice: parseFloat(currentPrice),
-        percentChange,
-      });
+        const obj = {
+          companyName,
+          prevClose,
+          currentPrice,
+          percentChange,
+        };
+
+        // If any value is null or empty, skip this row
+        const hasAllValidValues = Object.values(obj).every(
+          (val) => val && val !== "-"
+        );
+        if (hasAllValidValues) {
+          results.push(obj);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Skipped row ${i} due to error:`, err.message);
+      }
     });
-    console.log(results.slice(0,1))
+
     // console.log(results);
-    return results;
+    return results || [];
   } catch (error) {
     console.error("❌ Scraping failed:", error.message);
     return [];
@@ -93,15 +116,21 @@ app.get("/api/stock/top", async (req, res) => {
   const validExchanges = ["nse", "bse"];
 
   if (!validExchanges.includes(exchange)) {
-    return res.json({ status: "false", message: "Enter a valid exchange: nse or bse" });
+    return res.json({
+      status: "false",
+      message: "Enter a valid exchange: nse or bse",
+    });
   }
   if (!validStatus.includes(status)) {
-    return res.json({ status: "false", message: "Enter a valid status: gainers or losers" });
+    return res.json({
+      status: "false",
+      message: "Enter a valid status: gainers or losers",
+    });
   }
 
   const key = `${exchange}_${status}`;
-// console.log(key,result[key].length)
-  if (!result[key] || result[key].length==0) {
+  // console.log(key,result[key].length)
+  if (!result[key] || result[key].length == 0) {
     result[key] = await scrapeStockTable(status, exchange);
     saveCacheToFile();
   }
@@ -109,11 +138,11 @@ app.get("/api/stock/top", async (req, res) => {
   res.json({ status: "success", count: result[key].length, data: result[key] });
 });
 
-// Cron Job – 4:10 PM IST daily
+// Cron Job – 5:00 PM IST daily
 cron.schedule(
-  "59 11 * * *",
+  "0 17 * * *",
   async () => {
-    console.log("⏰ Cron triggered at 4:10 PM IST...");
+    console.log("⏰ Cron triggered at 5:00 PM IST...");
     const tasks = [
       { key: "nse_gainers", args: ["gainers", "nse"] },
       { key: "bse_gainers", args: ["gainers", "bse"] },
@@ -122,12 +151,42 @@ cron.schedule(
     ];
     result = {};
     tasks.forEach(({ key, args }) => {
-      const randomDelay = Math.floor(Math.random() * 10000); 
+      const randomDelay = Math.floor(Math.random() * 10000);
       setTimeout(async () => {
         console.log(`⚙️ Starting ${key} scrape after ${randomDelay} ms`);
         try {
           result[key] = await scrapeStockTable(...args);
-          console.log("🤡",result[key].length)
+          saveCacheToFile();
+          console.log(`✅ Finished ${key} | Count: ${result[key].length}`);
+        } catch (err) {
+          console.error(`❌ Failed ${key} scrape`, err.message);
+        }
+      }, randomDelay);
+    });
+  },
+  {
+    timezone: "Asia/Kolkata",
+  }
+);
+
+// Cron Job – 10:00 AM IST daily
+cron.schedule(
+  "0 10 * * *",
+  async () => {
+    console.log("⏰ Cron triggered at 10:00 AM IST...");
+    const tasks = [
+      { key: "nse_gainers", args: ["gainers", "nse"] },
+      { key: "bse_gainers", args: ["gainers", "bse"] },
+      { key: "nse_losers", args: ["losers", "nse"] },
+      { key: "bse_losers", args: ["losers", "bse"] },
+    ];
+    result = {};
+    tasks.forEach(({ key, args }) => {
+      const randomDelay = Math.floor(Math.random() * 10000);
+      setTimeout(async () => {
+        console.log(`⚙️ Starting ${key} scrape after ${randomDelay} ms`);
+        try {
+          result[key] = await scrapeStockTable(...args);
           saveCacheToFile();
           console.log(`✅ Finished ${key} | Count: ${result[key].length}`);
         } catch (err) {
